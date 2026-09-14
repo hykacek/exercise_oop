@@ -38,3 +38,24 @@ if __name__ == "__main__":
     print(a.overlaps(b))  # True  (4800-5000 shared)
     print(a.overlaps(c))  # False (different chromosome)
     GenomicFeature("chr1", 5000, 1000, "+")
+
+#TASK 2
+class Exon(GenomicFeature):
+    def __init__(self, chromosome, start, end, strand, exon_number):
+        super().__init__(chromosome, start, end, strand)
+        if not isinstance(exon_number, int):
+            raise ValueError("Exon number is incorrect")
+
+        self.exon_number = exon_number
+
+    def describe(self) -> str:
+        return f"{type(self).__name__} {self.chromosome}:{self.start}-{self.end}({self.strand}) exon #{self.exon_number}"
+
+if __name__ == "__main__":
+    features = [
+        GenomicFeature("chr1", 1000, 5000, "+"),
+        Exon("chr1", 1000, 1200, "+", 1),
+        Exon("chr1", 3000, 3300, "+", 2),
+    ]
+    for feature in features:
+        print(feature.describe())
