@@ -1,10 +1,12 @@
+#TASK 1
+
 class GenomicFeature:
     def __init__ (self, chromosome, start, end, strand):
         if not isinstance(chromosome, str):
             raise ValueError("Chromosome is incorrect")
-        if not isinstance(start, int) and start<=1 and start<=end:
+        if not isinstance(start, int) and start>=1 and start<=end:
             raise ValueError("Start is incorrect")
-        if not isinstance(end, int) and end<=1 and end>=start:
+        if not isinstance(end, int) and end>=1 and end>=start:
             raise ValueError("End is incorrect")
         if strand not in ("+","-"):
             raise ValueError("Strand is incorrect")
@@ -20,12 +22,8 @@ class GenomicFeature:
         if not isinstance(other, GenomicFeature):
             return False
         if self.chromosome != other.chromosome:
-            return f"{False} (different chromosome)"
-        if self.start <= other.start:
-            return f"{True} ({other.start} - {self.end} shared)"
-        if other.end <= self.end:
-            return f"{True} ({other.end} - {self.end} shared)"
-
+            return False
+        return self.start <= other.end and other.start <= self.end
 
     def describe(self) -> str:
         return f"{type(self).__name__} {self.chromosome}:{self.start}-{self.end}({self.strand})"
@@ -40,4 +38,3 @@ if __name__ == "__main__":
     print(a.overlaps(b))  # True  (4800-5000 shared)
     print(a.overlaps(c))  # False (different chromosome)
     GenomicFeature("chr1", 5000, 1000, "+")
-
