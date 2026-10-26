@@ -32,11 +32,10 @@ if __name__ == "__main__":
     b = GenomicFeature("chr1", 4800, 6000, "+")
     c = GenomicFeature("chr2", 1000, 5000, "+")
 
-    print(a.describe())  # GenomicFeature chr1:1000-5000(+)
-    print(a.length())  # 4001
-    print(a.overlaps(b))  # True  (4800-5000 shared)
-    print(a.overlaps(c))  # False (different chromosome)
-    GenomicFeature("chr1", 5000, 1000, "+")
+    print(a.describe())  
+    print(a.length())  
+    print(a.overlaps(b))  
+    print(a.overlaps(c))  
 
 #TASK 2
 class Exon(GenomicFeature):
@@ -83,8 +82,10 @@ class Gene(GenomicFeature):
         if not isinstance(exon, Exon):
             raise ValueError ("Exon is incorrect")
         self.exons.append(exon)
-    def total_exon_lenght(self) -> int:
+    def total_exon_length(self) -> int:
         return sum(exon.length() for exon in self.exons)
+    def describe(self) -> str:
+        return f"{type(self).__name__} {self.chromosome}:{self.start}-{self.end}({self.strand}) {self.name}, {len(self.exons)} exon(s)"
 
 class Variant(GenomicFeature):
     def __init__(self, chromosome, start, end, strand, ref_allele, alt_allele):
@@ -108,8 +109,61 @@ class Variant(GenomicFeature):
             return "MNV"
 
     def describe(self) -> str:
-        return f"{type(self).__name__} {self.chromosome}:{self.start}-{self.end}({self.strand}) {self.ref_allele}>{self.alt_allele} {self.variant_type()}"
+        return f"{type(self).__name__} {self.chromosome}:{self.start}-{self.end}({self.strand}) {self.ref_allele}>{self.alt_allele} ({self.variant_type()})"
+if __name__ == "__main__":
+    genes: dict[str, Gene] = {}
+    variants: list[Variant] = []
 
-if __name__ =="__main__":
-    genes={}
-    variants=[]
+    with open("oop_data.tsv") as file:
+        for line in file:
+            line = line.strip()
+
+            if not line or line.startswith("type") or line.startswith("#"):
+                continue
+
+            parts = line.split("\t")
+            feature_type = parts[0]
+            chromosome = parts[1]
+            start = int(parts[2])
+            end = int(parts[3])
+            strand = parts[4]
+            field_a = parts[5]
+            if len(parts) > 6:
+                field_b = parts[6]
+            else:
+                field_b = ""
+
+            if feature_type == "gene":
+                genes[field_a] = Gene(chromosome, start, end, strand, field_a)
+            elif feature_type == "exon":
+                exon = Exon(chromosome, start, end, strand, int(field_b))
+                if field_a in genes:
+                    genes[field_a].add_exon(exon)
+            elif feature_type == "variant":
+                variants.append(
+                    Variant(chromosome, start, end, strand, field_a, field_b)
+                )
+
+    all_features = list(genes.values()) + variants
+    for feature in all_features:
+        if isinstance(feature, Gene):
+            print(
+                f"{feature.describe()} | Total exon length: {feature.total_exon_length()}"
+            )
+        else:
+            print(feature.describe())
+
+    for var in variants:
+        found_in_gene = False
+        for gene in genes.values():
+            if var.overlaps(gene):
+                found_in_gene = True
+                in_exon = any(var.overlaps(exon) for exon in gene.exons)
+                if in_exon:
+                    print(f"{var.describe()} -> inside {gene.name} (in exon)")
+                else:
+                    print(
+                        f"{var.describe()} -> inside {gene.name} (not in exon)"
+                    )
+        if not found_in_gene:
+            print(f"{var.describe()} -> intergenic")
